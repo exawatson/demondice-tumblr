@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="description" content="An archive of DEMONDICE's Tumblr posts">
+  <title>Tumblr for Demons</title>
+  <style>
+    html {
+      background-color: #111;
+      color: #fff;
+      box-sizing: border-box;
+      font-family: sans-serif;
+      scroll-padding-top: 1rem;
+    }
+
+    body {
+      margin: 1rem 2rem;
+    }
+
+    *, *:before, *:after {
+      box-sizing: inherit;
+    }
+
+    a:link, a:visited {
+      color: inherit;
+    }
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #sort-checkbox {
+      display: none;
+    }
+
+    .sort-label {
+      cursor: pointer;
+      margin-left: auto;
+    }
+
+    #sort-checkbox:checked ~ header .sort-label::after {
+      content: "\25B2";
+    }
+
+    #sort-checkbox:not(:checked) ~ header .sort-label::after {
+      content: "\25BC";
+    }
+
+    h1 {
+      font-size: 2rem;
+      font-family: "Bookman Old Style", serif;
+      font-weight: normal;
+    }
+
+    .posts {
+      display: flex;
+      flex-wrap: wrap;
+    }
+
+    #sort-checkbox:checked ~ .posts {
+      flex-direction: column-reverse;
+    }
+
+    article {
+      background-color: #252525;
+      padding: 1rem;
+      margin: 1rem 0;
+      border-radius: 0.125rem;
+      border: .2rem solid transparent;
+      flex-basis: 100%;
+    }
+
+    article:target {
+      border-color: #ccc;
+    }
+
+    h2 {
+      text-align: right;
+      font-size: .8rem;
+      font-weight: normal;
+    }
+
+    figure {
+      text-align: center;
+    }
+
+    img, video, iframe {
+      border: 0;
+      max-width: 70%;
+      max-height: 15rem;
+      height: auto;
+      object-fit: contain;
+    }
+
+    iframe.video-youtube {
+      aspect-ratio: 16 / 9;
+      height: auto;
+      max-height: none;
+    }
+
+    iframe.audio-tumblr {
+      height: 85px;
+      width: 100%;
+    }
+  </style>
+</head>
+<body>
+  <input type="checkbox" id="sort-checkbox">
+  <header>
+    <h1>tumblr for demons.</h1>
+    <label class="sort-label" for="sort-checkbox" title="toggle sort order"></label>
+  </header>
+  <div class="posts">
+  {% for post in posts %}
+    <article id="post-{{ post.post.id }}">
+      <h2><a href="#post-{{ post.post.id }}">#{{ post.post.id }}</a></h2>
+      {% for block in post.content %}
+      {% if block.type == "image" %}
+      <figure>
+        <a href="{{ block.hd or block.url }}">
+          <img src="{{ block.hd or block.url }}" loading="lazy" alt="" height="{{ block.height }}" width="{{ block.width }}">
+        </a>
+      </figure>
+      {% elif block.type == "video" and block.provider == "youtube" %}
+      <figure>
+        <iframe
+          src="https://www.youtube.com/embed/{{ extract_video_id(block.url) }}"
+          {% if block.embed_html %}
+          title="{{ extract_video_title(block.embed_html) }}"
+          {% else %}
+          title="YouTube video"
+          {% endif %}
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowfullscreen
+          class="video-youtube"
+          loading="lazy"
+          width="560"
+          height="315"
+        ></iframe>
+        <figcaption>
+          <a href="https://www.youtube.com/watch?v={{ extract_video_id(block.url) }}">
+            {% if block.embed_html %}
+            {{ extract_video_title(block.embed_html) }}
+            {% else %}
+            https://www.youtube.com/watch?v={{ extract_video_id(block.url) }}
+            {% endif %}
+          </a>
+        </figcaption>
+      </figure>
+      {% elif block.type == "video" and not block.provider %}
+      <figure>
+        <video controls poster="{{ block.poster.url }}" height="{{ block.media.height }}" width="{{ block.media.width }}">
+          <source src="{{ block.media.url }}" type="{{ block.media.type }}">
+        </video>
+        <figcaption>
+          <a href="{{ block.share_url }}">
+            {{ block.share_url }}
+          </a>
+        </figcaption>
+      </figure>
+      {% elif block.type == "audio" and block.provider == "tumblr" %}
+      <figure>
+        <iframe class="audio-tumblr" src="{{ block.share_url }}" scrolling="no" loading="lazy" height="85"></iframe>
+        <figcaption>
+          {% if block.artist and block.title %}
+          <a href="{{ block.share_url }}">{{ block.artist }} - {{ block.title }}</a>
+          {% else %}
+          <a href="{{ block.share_url }}">(audio)</a>
+          {% endif %}
+        </figcaption>
+      </figure>
+      {% elif block.type == "link" %}
+      <p><a href="{{ block.url }}">{{ block.display_url }}</a></p>
+      {% elif block.type == "text" %}
+      {% if block.formatting %}
+      <p>{{ apply_formatting(block.text, block.formatting) | safe }}</p>
+      {% else %}
+      <p>{{ block.text }}</p>
+      {% endif %}
+      {% else %}
+      {# UNHANDLED BLOCK TYPE #}
+      {% endif %}
+      {% endfor %}
+    </article>
+  {% endfor %}
+  </div>
+</body>
+</html>
